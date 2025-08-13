@@ -110,98 +110,110 @@
     },
 
     methods:{
-        searchProduct(){
-            // 검색 시 초기화
-            this.productList = [];
-            this.currentPage = 0;
-            this.isLastPage = false;
-            this.isLoading = false;
-            // 초기화 후 데이터 로드
-            this.loadData();
-        },
+      addCart(){
+        let totalQuantity = 0;
+        const orderProductList = this.productList
+                                .filter(p=>p.selected && Number(p.productCount) > 0)
+                                .map(p=> ({productId: p.id, productCount: Number(p.productCount),
+                                }))
+        for(let i=0; i<orderProductList.length; i++){
+          totalQuantity += orderProductList[i].productCount;
+        }
+        console.log(totalQuantity); // 장바구니에 담을 수량 잘 찍히는지
+        this.$store.dispatch("addCart", totalQuantity);
+      },
+      searchProduct(){
+          // 검색 시 초기화
+          this.productList = [];
+          this.currentPage = 0;
+          this.isLastPage = false;
+          this.isLoading = false;
+          // 초기화 후 데이터 로드
+          this.loadData();
+      },
 
-        scrollPaging(){
-            // 현재화면높이 + 스크롤로 이동한 거리 > 전체화면높이 - n(내가원하는길이) 가 성립되면 추가 데이터 로드
-            const isBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;   // boolean값
+      scrollPaging(){
+          // 현재화면높이 + 스크롤로 이동한 거리 > 전체화면높이 - n(내가원하는길이) 가 성립되면 추가 데이터 로드
+          const isBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;   // boolean값
 
-            if (isBottom && !this.isLoading && !this.isLastPage){   // isBottom=true, this.isLoading=false(실행 안 되는 상태), this.isLastPage=false 면 데이터 로드
-                this.loadData();
-                console.log("test");
-            }
-        },
+          if (isBottom && !this.isLoading && !this.isLastPage){   // isBottom=true, this.isLoading=false(실행 안 되는 상태), this.isLastPage=false 면 데이터 로드
+              this.loadData();
+              console.log("test");
+          }
+      },
 
-        async loadData(){
-            this.isLoading = true;
-            // 문자열로 직접 ?size=xx&page=yy&&productName=ee&&category=zz 형태로도 조립 가능하지만, params라는 객체를 사용하면 파라미터형식으로 url 조립
-            let params={
-                size: this.pageSize,
-                page: this.currentPage,
-            }
+      async loadData(){
+          this.isLoading = true;
+          // 문자열로 직접 ?size=xx&page=yy&&productName=ee&&category=zz 형태로도 조립 가능하지만, params라는 객체를 사용하면 파라미터형식으로 url 조립
+          let params={
+              size: this.pageSize,
+              page: this.currentPage,
+          }
 
-            if (this.searchType == "productName") {
-                params.productName = this.searchValue;  // 사용자가 입력한 값
-            }
+          if (this.searchType == "productName") {
+              params.productName = this.searchValue;  // 사용자가 입력한 값
+          }
 
-            if (this.searchType == "category") {
-                params.category = this.searchValue; // 사용자가 선택한 카테고리
-            }
+          if (this.searchType == "category") {
+              params.category = this.searchValue; // 사용자가 선택한 카테고리
+          }
 
-            const response = await axios.get(`${process.env.VUE_APP_API_BASE_URL}/product/list`, {params});
-            const additionalData = response.data.result.content.map(p=>({...p, productCount:0, selected:false})); // 기존의 데이터 + productCount = 0, selected를 false로 세팅
-            
-            if (additionalData.length == 0) {   // 받아올 데이터가 더이상 없으면
-                this.isLastPage = true;
-            }
-            this.productList = [...this.productList, ...additionalData];   // 기존 페이지 데이터 + 새 페이지 데이터 로드
-            // 로드된 후 현재페이지 값 ++
-            this.currentPage++;
-            this.isLoading = false;
-        },
+          const response = await axios.get(`${process.env.VUE_APP_API_BASE_URL}/product/list`, {params});
+          const additionalData = response.data.result.content.map(p=>({...p, productCount:0, selected:false})); // 기존의 데이터 + productCount = 0, selected를 false로 세팅
+          
+          if (additionalData.length == 0) {   // 받아올 데이터가 더이상 없으면
+              this.isLastPage = true;
+          }
+          this.productList = [...this.productList, ...additionalData];   // 기존 페이지 데이터 + 새 페이지 데이터 로드
+          // 로드된 후 현재페이지 값 ++
+          this.currentPage++;
+          this.isLoading = false;
+      },
 
-        orderedProduct(){
-            return this.productList
-            .filter(p=>p.selected && Number(p.productCount) > 0)
-            .map(p=> ({productId: p.id, productCount: Number(p.productCount),
-            }))
-        },
+      orderedProduct(){
+          return this.productList
+          .filter(p=>p.selected && Number(p.productCount) > 0)
+          .map(p=> ({productId: p.id, productCount: Number(p.productCount),
+          }))
+      },
 
-        async createdOrder(){
-            try{
-                const orderedProductList = this.orderedProduct();
+      async createdOrder(){
+          try{
+              const orderedProductList = this.orderedProduct();
 
-                // 선택/수량 검증
-                if (orderedProductList.length === 0) {
-                    alert('선택된 상품이 없거나 주문수량이 1개 이상이 아닙니다.');
-                    return;
-                }
+              // 선택/수량 검증
+              if (orderedProductList.length === 0) {
+                  alert('선택된 상품이 없거나 주문수량이 1개 이상이 아닙니다.');
+                  return;
+              }
 
-                console.log('보낼 데이터:', orderedProductList);
+              console.log('보낼 데이터:', orderedProductList);
 
-                // JWT 쓰면 토큰 첨부
-                const accessToken = localStorage.getItem('accessToken');
+              // JWT 쓰면 토큰 첨부
+              const accessToken = localStorage.getItem('accessToken');
 
-                const res = await axios.post(
-                    `${process.env.VUE_APP_API_BASE_URL}/ordering/create`,
-                    orderedProductList,
-                    {
-                    headers: {
-                        Authorization: accessToken ? `Bearer ${accessToken}` : undefined,
-                        'Content-Type': 'application/json',
-                    },
-                });
-                console.log(res.data);
+              const res = await axios.post(
+                  `${process.env.VUE_APP_API_BASE_URL}/ordering/create`,
+                  orderedProductList,
+                  {
+                  headers: {
+                      Authorization: accessToken ? `Bearer ${accessToken}` : undefined,
+                      'Content-Type': 'application/json',
+                  },
+              });
+              console.log(res.data);
 
-                // 성공 처리
-                alert('주문이 완료되었습니다.');
-                // 성공 시 초기화
-                // window.location.reload();
-                this.selected = {};
-                this.productList = this.productList.map(p => ({ ...p, productCount: 0, selected: false }));
-            } catch (e) {
-                console.error(e);
-                alert('주문 중 오류가 발생했습니다.');
-            }
-        },
+              // 성공 처리
+              alert('주문이 완료되었습니다.');
+              // 성공 시 초기화
+              // window.location.reload();
+              this.selected = {};
+              this.productList = this.productList.map(p => ({ ...p, productCount: 0, selected: false }));
+          } catch (e) {
+              console.error(e);
+              alert('주문 중 오류가 발생했습니다.');
+          }
+      },
   },
 }
 </script>
