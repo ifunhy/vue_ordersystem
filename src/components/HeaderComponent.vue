@@ -14,7 +14,7 @@
                     <v-btn :to="'/'">java shop</v-btn>  <!-- :to="'/'" : home 경로로 감-->
                 </v-col>
                 <v-col class="d-flex justify-end">      <!-- justify-end : 오른쪽 기준 정렬 -->
-                    <v-btn v-if="isLogined" :to="'/order/cart'">장바구니 {{ totalQuantity }}</v-btn>
+                    <v-btn v-if="isLogined" :to="'/order/cart'">장바구니 {{ totalQuantity }}</v-btn>    <!-- 전역상태관리하여 totalQuantity 값 업데이트 -->
                     <v-btn :to="'/product/list'">상품목록</v-btn>
                     <v-btn v-if="isLogined" :to="'/member/mypage'">마이페이지</v-btn>
                     <v-btn v-if="!isLogined" :to="'/member/create'">회원가입</v-btn>   <!-- Login이 안 된 상태인 경우-->

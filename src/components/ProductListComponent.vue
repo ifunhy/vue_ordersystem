@@ -111,16 +111,12 @@
 
     methods:{
       addCart(){
-        let totalQuantity = 0;
         const orderProductList = this.productList
                                 .filter(p=>p.selected && Number(p.productCount) > 0)
-                                .map(p=> ({productId: p.id, productCount: Number(p.productCount),
-                                }))
-        for(let i=0; i<orderProductList.length; i++){
-          totalQuantity += orderProductList[i].productCount;
-        }
-        console.log(totalQuantity); // 장바구니에 담을 수량 잘 찍히는지
-        this.$store.dispatch("addCart", totalQuantity);
+                                .map(p=> ({productId: p.id, name: p.name, productCount: Number(p.productCount),
+                                })) // 전역상태, localStorage에 담을 id, name, productCount 필터링
+        orderProductList.forEach(p=> this.$store.dispatch("addCart", p)); // orderProductList에서 p로 하나씩 꺼내서 addCart()로 넘김
+        // this.$store.dispatch("addCart", orderProductList);  // 주문하려는 요소(orderProductList)를 넘김
       },
       searchProduct(){
           // 검색 시 초기화
