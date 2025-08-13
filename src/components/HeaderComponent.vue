@@ -4,10 +4,10 @@
             <v-row>
                 <v-col class="d-flex justify-start">    <!-- justify-start : 왼쪽 기준 정렬 -->
                     <div v-if="userRole==='ADMIN'">     <!-- ADMIN만 보이는 버튼-->
-                        <v-btn :to="'/member/list'">회원관리</v-btn>
+                        <v-btn :to="'/member/list'">회원관리</v-btn>    <!-- router에 넘겨주기 위한 작은따옴표 '/member/list' -->
                         <v-btn :to="'/product/manage'">상품관리</v-btn>
-                        <v-btn :to="'/order/list'">실시간주문건수</v-btn>
-                        <v-btn :to="'/practice/store'">스토어테스트</v-btn>
+                        <v-btn href="/order/list">실시간주문건수 {{ liveOrderCount }}</v-btn>
+                        <!-- <v-btn :to="'/practice/store'">스토어테스트</v-btn> -->
                     </div>
                 </v-col>
                 <v-col class="text-center">
@@ -27,6 +27,7 @@
 </template>
 
 <script>
+import { EventSourcePolyfill } from 'event-source-polyfill';
 import { jwtDecode } from 'jwt-decode';
 
 export default{
@@ -34,6 +35,7 @@ export default{
         return {
             userRole : null,
             isLogined : false,
+            liveOrderCount : 0, // 실시간주문건수
         }
     },
 
@@ -46,6 +48,25 @@ export default{
             console.log(payload);
             this.userRole = payload.role;   // payload에서 role을 꺼냄
             this.isLogined = true;
+        }
+
+        // sse 연결 및 메시지 수신
+        // 헤더 컴포넌트의 실시간주문건수 커넥트
+        if (this.userRole === 'ADMIN') {
+            // sse연결을 위한 event-source-polyfill라이브러리 사용
+            let sse = new EventSourcePolyfill(`${process.env.VUE_APP_API_BASE_URL}/sse/connect`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            });
+
+            sse.addEventListener('connect', (event) => {
+                console.log(event); // 콜백함수
+            })
+            sse.addEventListener('ordered', (event) => {
+                console.log(event); // 콜백함수
+                this.liveOrderCount++;  // ordered 이벤트가 들어오면 liveOrderCount의 값 증가
+            })
         }
     },
 
